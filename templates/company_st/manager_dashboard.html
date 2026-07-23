@@ -1,10 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="h4 mb-4">Продажи: объекты и воронка</h1>
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0">Новый объект (проект)</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'manager_dashboard' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Название объекта</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Например: ЖК «Северный»">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Адрес</label>
+                        <input type="text" name="address" class="form-control" placeholder="Необязательно">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Стадия воронки</label>
+                        <select name="status" class="form-select">
+                            {% for val, label in status_choices %}
+                            <option value="{{ val }}" {% if val == 'LEAD' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Дата начала</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Дата окончания</label>
+                            <input type="date" name="end_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Договор (необязательно)</label>
+                        <select name="contract_id" class="form-select">
+                            <option value="">— без договора —</option>
+                            {% for c in contracts %}
+                            <option value="{{ c.id }}">{{ c.contract_number }} — {{ c.name }} ({{ c.counterparty.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="create_estimate" id="create_estimate" value="1">
+                        <label class="form-check-label" for="create_estimate">Сразу создать пустую смету (финансист заполнит)</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Создать объект</button>
+                </form>
+                <hr>
+                <a class="btn btn-outline-secondary w-100" href="{% url 'add_project' %}">Расширенное создание</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Объекты</h2>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'project_list' %}">Все объекты</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Стадия</th>
+                                <th>Договор / заказчик</th>
+                                <th>Сроки</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in projects %}
+                            <tr>
+                                <td>{{ project.id }}</td>
+                                <td><strong>{{ project.name }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ project.get_status_display }}</span></td>
+                                <td>
+                                    {% if project.contract %}
+                                    {{ project.contract.contract_number }} — {{ project.contract.counterparty.name }}
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if project.start_date %}{{ project.start_date|date:"d.m.Y" }}{% else %}—{% endif %}
+                                    —
+                                    {% if project.end_date %}{{ project.end_date|date:"d.m.Y" }}{% else %}—{% endif %}
+                                </td>
+                                <td class="text-nowrap">
+                                    <a class="btn btn-sm btn-outline-primary" href="{% url 'project_detail' project.pk %}">Карточка</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_project' project.pk %}">Изменить</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Пока нет объектов — создайте первый слева.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

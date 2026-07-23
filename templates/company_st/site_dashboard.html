@@ -1,18 +1,94 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Панель Финансиста: Работа со сметами</h2>
-<form method="post" class="mb-4">
-    {% csrf_token %}
-    <select name="project" class="form-select mb-2">
-        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
-    </select>
-    <input type="number" name="cost" placeholder="Итоговая сумма" class="form-control mb-2">
-    <button class="btn btn-success">Рассчитать стоимость</button>
-</form>
-<table class="table">
-    <thead><tr><th>Проект</th><th>Сумма</th></tr></thead>
-    {% for est in estimates %}
-    <tr><td>{{ est.project.name }}</td><td>{{ est.total_price }} руб.</td></tr>
-    {% endfor %}
-</table>
+<h1 class="h4 mb-3">Производство: бригады, люди, техника</h1>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>Бригады</strong>
+                <a class="btn btn-sm btn-primary" href="{% url 'brigade_add' %}">Новая бригада</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light"><tr><th>Название</th><th>Специализация</th><th>Состав</th><th></th></tr></thead>
+                    <tbody>
+                        {% for b in brigades %}
+                        <tr>
+                            <td>{{ b.name }}</td>
+                            <td>{{ b.specific }}</td>
+                            <td>{{ b.workers.count }} чел.</td>
+                            <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'brigade_edit' b.pk %}">Изменить</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">Нет бригад</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <strong>Сотрудники</strong>
+                <a class="btn btn-sm btn-primary" href="{% url 'add_worker' %}">Добавить</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light"><tr><th>ФИО</th><th>ИНН</th><th></th></tr></thead>
+                    <tbody>
+                        {% for w in workers|slice:":15" %}
+                        <tr>
+                            <td>{{ w.last_name }} {{ w.first_name }}</td>
+                            <td>{{ w.inn }}</td>
+                            <td><a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_worker' w.pk %}">Правка</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-muted text-center py-3">Нет сотрудников</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="p-2 text-end"><a href="{% url 'worker_list' %}">Все сотрудники</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <strong>Техника и оборудование</strong>
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'technique_list' %}">Список</a>
+            <a class="btn btn-sm btn-primary" href="{% url 'add_technique' %}">Добавить</a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 small">
+            <thead class="table-light">
+                <tr><th>Наименование</th><th>Рабочий</th><th>Бригада</th><th>Срок</th></tr>
+            </thead>
+            <tbody>
+                {% for item in techniques|slice:":20" %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.worker|default:"—" }}</td>
+                    <td>{{ item.brigade|default:"—" }}</td>
+                    <td>{{ item.end_date|date:"d.m.Y"|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-3">Техника не заведена</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-light"><strong>Задачи по объектам</strong></div>
+    <div class="card-body small text-muted">
+        Откройте <a href="{% url 'project_list' %}">список объектов</a> и добавляйте задачи в карточке объекта.
+        <hr>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'warehouse_list' %}">Склады и остатки</a>
+    </div>
+</div>
 {% endblock %}

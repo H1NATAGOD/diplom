@@ -1,64 +1,85 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Панель Менеджера</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body class="container mt-5">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container-fluid">
-        <span class="navbar-brand">Система СУП</span>
-        <div class="d-flex align-items-center">
-            <span class="text-light me-3">Пользователь: <strong>{{ request.user.username }}</strong></span>
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="h4 mb-0">Финансы: сметы и закупки</h1>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'purchase_request_list' %}">Все заявки</a>
+        <a class="btn btn-sm btn-primary" href="{% url 'purchase_request_create' %}">Новая заявка</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'material_list' %}">Справочник материалов</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'warehouse_list' %}">Склады</a>
+    </div>
+</div>
 
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Выйти</button>
-            </form>
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-light"><strong>Сметы</strong></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Объект</th>
+                        <th>Смета</th>
+                        <th>Итого, руб.</th>
+                        <th>Дата</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in estimates %}
+                    <tr>
+                        <td>{{ e.project.name }}</td>
+                        <td>{{ e.name }}</td>
+                        <td>{{ e.total_cost|default:"—" }}</td>
+                        <td class="small">{{ e.date|date:"d.m.Y" }}</td>
+                        <td class="text-nowrap">
+                            <a class="btn btn-sm btn-primary" href="{% url 'estimate_detail' e.pk %}">Редактировать</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'export_estimate_pdf' e.pk %}">PDF</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'export_estimate_docx' e.pk %}">DOCX</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-muted text-center py-4">Смет пока нет</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-</nav>
+</div>
 
-    <h2>Рабочее место менеджера: {{ request.user.username }}</h2>
-    <hr>
-
-    <h3>Добавить новый объект (проект)</h3>
-    <form method="post" class="row g-3 mb-5">
-        {% csrf_token %}
-        <div class="col-auto">
-            <input type="text" name="name" class="form-control" placeholder="Название объекта" required>
-        </div>
-        <div class="col-auto">
-            <select name="client" class="form-select" required>
-                <option value="">Выберите заказчика...</option>
-                {% for cp in counterparties %}
-                    <option value="{{ cp.id }}">{{ cp.name }}</option>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between">
+        <strong>Последние заявки на закупку</strong>
+        <a href="{% url 'purchase_request_list' %}">Все заявки →</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead class="table-light"><tr><th>№</th><th>Смета</th><th>Склад</th><th>Статус</th><th>На складе</th><th>Дата</th><th></th></tr></thead>
+            <tbody>
+                {% for pr in purchase_requests %}
+                <tr>
+                    <td>{{ pr.id }}</td>
+                    <td>{% if pr.estimate %}#{{ pr.estimate.id }} ({{ pr.estimate.project.name }}){% else %}—{% endif %}</td>
+                    <td>{{ pr.warehouse|default:"—" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'finance_update_purchase_status' pr.id %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <select name="status" class="form-select form-select-sm">
+                                {% for value, label in purchase_status_choices %}
+                                <option value="{{ value }}" {% if pr.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">OK</button>
+                        </form>
+                    </td>
+                    <td>{% if pr.stock_posted %}<span class="badge text-bg-success">Да</span>{% else %}<span class="badge text-bg-secondary">Нет</span>{% endif %}</td>
+                    <td>{{ pr.created_at|date:"d.m.Y H:i" }}</td>
+                    <td><a class="btn btn-sm btn-link" href="{% url 'purchase_request_edit' pr.pk %}">Изменить</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-muted text-center py-3">Нет заявок</td></tr>
                 {% endfor %}
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Создать объект</button>
-        </div>
-    </form>
-
-    <h3>Список текущих объектов</h3>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Название объекта</th>
-                <th>Заказчик</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for project in projects %}
-            <tr>
-                <td>{{ project.id }}</td>
-                <td>{{ project.name }}</td>
-                <td>{{ project.client.name }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Title</title>
-</head>
-<body>
+{% extends "admin/base.html" %}
 
-</body>
-</html>
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">Администрирование СтройСистемы</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}
+    <div class="user-tools" style="float: right; padding: 10px;">
+        <strong style="color: #fff; margin-right: 15px;">Перейти в разделы:</strong>
+        <a href="{% url 'manager_dashboard' %}" style="color: #79aec8; margin-right: 10px;">📊 Менеджер</a>
+        <a href="{% url 'finance_dashboard' %}" style="color: #79aec8; margin-right: 10px;">💰 Финансы</a>
+        <a href="{% url 'site_manager_dashboard' %}" style="color: #79aec8;">🏗️ Участок</a>
+    </div>
+    {{ block.super }}
+{% endblock %}
